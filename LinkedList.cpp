@@ -3,14 +3,15 @@
 #include <iostream>
 
 
-// constructor - assignment - destructor - - - - - -
-
+// constructor - assignment - destructor - - - - - - - - - - - - - - - - - - -
 
 // constructor
 LinkedList::LinkedList():head(nullptr),length(0) {}
 
 // copy constructor
-LinkedList::LinkedList(const LinkedList& rhs) {copy_helper(rhs);}
+LinkedList::LinkedList(const LinkedList& rhs):head(new Node),length(rhs.length) {
+    if (rhs.head) {copy_helper(head,rhs.head);}
+}
 
 // assignment operator (copy/move)
 LinkedList& LinkedList::operator=(LinkedList rhs) {
@@ -24,13 +25,30 @@ LinkedList::LinkedList(LinkedList&& rhs):LinkedList() {swap(*this, rhs);}
 // destructor
 LinkedList::~LinkedList() {if (head != nullptr) {destruct_helper(head);}}
 
+// public member functions: - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-// public member functions: - - - - - - - - - - - - -
-
-
-// return the list length
-void LinkedList::get_length() const {
+// print the list length
+void LinkedList::print_length() const {
     std::cout << "length: " << length << std::endl;
+}
+
+// print the index and data of the node (search by data)
+void LinkedList::print_index(double data) const {
+    int index = 0;
+    Node* ans = find_helper(data, head, index);
+    if (ans) {
+        std::cout << ans->data << " is at index " << index;
+        std::cout << std::endl;
+    }
+}
+
+// print the index and data of the node (search by index)
+void LinkedList::print_data(int index) const {
+    Node* ans = find_helper(head, index);
+    if (ans) {
+        std::cout << ans->data << " is at index " << index;
+        std::cout << std::endl;
+    }
 }
 
 // print the content of the linked list (front to end)
@@ -58,16 +76,6 @@ void LinkedList::print_reverse() const {
     }
 }
 
-// check if a data exists in the linked list
-void LinkedList::print_node(double data) {
-        int position = 0;
-        Node* ans = find_helper(data, head, position);
-        if (ans) {
-            std::cout << ans->data << " is at index " << position;
-            std::cout << std::endl;
-        }
-}
-
 // update the data of an existing node
 void LinkedList::update_node(double old_val, double new_val) {
         int position = 0;
@@ -76,55 +84,44 @@ void LinkedList::update_node(double old_val, double new_val) {
 }
 
 // add a new node to the beginning of the linked list
-void LinkedList::add_first(double data) {
+void LinkedList::add_node_front(double data) {
     Node* new_node = new Node(data);
     if (!head) {
         head = new_node;
-        ++length;
     } else {
         new_node->next = head;
         head = new_node;
-        ++length;
     }
+    ++length;
 }
 
-// add a new node to the nth position of the linked list
-// if n bigger than size, adds to the end
-void LinkedList::add_middle(double data, int n) {
+// add a new node to the middle of the linked list
+void LinkedList::add_node_middle(double data, int n) {
     Node* new_node = new Node(data);
     if (!head) {
         head = new_node;
         ++length;
     } else if (n == 0) {
-        add_first(data);
+        add_node_front(data);
     } else {
-        int position = 1;
-        Node* p = head;
-        while (position != n && p->next) {
-            p = p->next;
-            ++position;
-        }
-        Node* temp = p->next;
-        p->next = new_node;
+        Node* ans = find_helper(head, n-1);
+        Node* temp = ans->next;
+        ans->next = new_node;
         new_node->next = temp;
         ++length;
     }
 }
 
 // add a new node to the end of the linked list
-void LinkedList::add_last(double data) {
+void LinkedList::add_node_end(double data) {
     Node* new_node = new Node(data);
     if (!head) {
         head = new_node;
-        ++length;
     } else {
-        Node* curr = head;
-        while (curr->next != nullptr) {
-            curr = curr->next;
-        }
-        curr->next = new_node;
-        ++length;
+        Node* ans = find_helper(head, length-1);
+        ans->next = new_node;
     }
+    ++length;
 }
 
 // remove an existing node from the linked list
@@ -184,46 +181,81 @@ void LinkedList::reverse_list_recurse() {
     }
 }
 
-
-// private utility functions: - - - - - - - - - - - - -
-
-
-// used by copy constructor. performs deep copy
-void LinkedList::copy_helper(const LinkedList& obj) {
-    if (!(obj.head)) {
-        length = 0;
-        head   = nullptr;
+// make a deep copy of input list to the index n of the current list
+void LinkedList::splice(int n, const LinkedList& obj) {
+    if (!head) {
+        copy_helper(head, obj.head);
     } else {
-        length = obj.length;
-        Node* creator = new Node(obj.head->data);
-        head = creator;
-        Node* iterator = obj.head->next;
-        while (iterator != nullptr) {
-            creator->next = new Node;
-            creator = creator->next;
-            creator->data = iterator->data;
-            iterator = iterator->next;
+        Node* new_head = new Node;
+        copy_helper(new_head, obj.head);
+        Node* new_end = find_helper(new_head, obj.length-1);
+        if (n == 0) {
+            Node* temp = head;
+            head = new_head;
+            new_end->next = temp;
+        } else {
+            Node* temp1 = find_helper(head, n-1);
+            Node* temp2 = temp1->next;
+            temp1->next = new_head;
+            new_end->next = temp2;
         }
-        creator->next = nullptr;
     }
+    length += obj.length;
 }
 
-// used by print_node() and update_node(). look for data starting
-// at search to the end of the list
+// private utility functions: - - - - - - - - - - - - - - - - - - - - - - - -
+
+// used by copy constructor. performs deep copy from 'source' to 'target'
+void LinkedList::copy_helper(Node*& target, Node* source) {
+    Node* creator = new Node(source->data);
+    target = creator;
+    Node* iterator = source->next;
+    while (iterator != nullptr) {
+        creator->next = new Node;
+        creator = creator->next;
+        creator->data = iterator->data;
+        iterator = iterator->next;
+    }
+    creator->next = nullptr;
+}
+
+// used by print_index() and update_node(). 
+// look for the node with data starting at 'search' to the end of the list
 LinkedList::Node* LinkedList::find_helper(double data, Node* search,
-                                          int& position) {
+                                          int& index) const {
     if (!search) {
-        std::cout << "the list is empty !" << std::endl;
+        std::cout << data << " is not in the list!" << std::endl;
         return nullptr;
     } else {
         while (search->data != data && search->next) {
             search = search->next;
-            ++position;
+            ++index;
         }
         if (search->data == data) {
             return search;
         } else {
             std::cout << data << " is not in the list!" << std::endl;
+            return nullptr;
+        }
+    }
+}
+
+// used by print_data(), add_node_middle(), add_node_end(), splice()
+// look for the node with index starting at search to the end of the list
+LinkedList::Node* LinkedList::find_helper(Node* search, int index) const {
+    if (!search) {
+        std::cout << "index: " << index << " not in the list!" << std::endl;
+        return nullptr;
+    } else {
+        int n = 0;
+        while (n != index && search->next) {
+            search = search->next;
+            ++n;
+        }
+        if (n == index) {
+            return search;
+        } else {
+            std::cout << "index: " << index << " not in the list!" << std::endl;
             return nullptr;
         }
     }

@@ -11,7 +11,7 @@ friend void swap(LinkedList& lhs, LinkedList& rhs) {
     swap(lhs.length, rhs.length);
 }
 private:
-    struct Node{
+    struct Node {
         double data;
         Node* next;
         Node(double d):data(d),next(nullptr) {}
@@ -20,8 +20,9 @@ private:
     Node* head;
     int length;
     // private utility functions
-    void copy_helper(const LinkedList&);
-    Node* find_helper(double, Node*, int&);
+    void copy_helper(Node*&, Node*);
+    Node* find_helper(double, Node*, int&) const;
+    Node* find_helper(Node*, int) const;
     void print_rev_helper(Node*) const;
     void reverse_helper(Node*, Node*, Node*);
     void destruct_helper(Node*);
@@ -32,20 +33,21 @@ public:
     LinkedList& operator=(LinkedList);
     LinkedList(LinkedList&&);
     ~LinkedList();
-    // public member functions
-    void get_length() const;
+    // print - find information
+    void print_length() const;
+    void print_index(double) const;
+    void print_data(int) const;
     void print_forward() const;
     void print_reverse() const;
-    void print_node(double);
+    // updata - add - remove
     void update_node(double, double);
-    void add_first(double);
-    void add_middle(double, int);
-    void add_last(double);
+    void add_node_front(double);
+    void add_node_middle(double, int);
+    void add_node_end(double);
     void rem_node(double);
     void reverse_list_iterate();
     void reverse_list_recurse();
+    void splice(int, const LinkedList&);
 };
 
-
 #endif
-
