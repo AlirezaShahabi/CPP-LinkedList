@@ -3,196 +3,260 @@
 #include <iostream>
 
 
+// constructor - assignment - destructor - - - - - -
+
 
 // constructor
 LinkedList::LinkedList():head(nullptr),length(0) {}
 
-
-
 // copy constructor
-LinkedList::LinkedList(const LinkedList& obj) {
-    
-    if (obj.head == nullptr){
-        
-        head = nullptr;
-        length = 0;
-        
-    }else{
-        
-        length = obj.length;
-        copier(obj);
-    }
+LinkedList::LinkedList(const LinkedList& rhs) {copy_helper(rhs);}
 
-}
-
-
-
-// copy assignment operator
-LinkedList& LinkedList::operator=(const LinkedList& rhs){
-    
-    if (head != nullptr) {
-        terminator();
-    }
-    
-    if (rhs.head == nullptr){
-     
-        head = nullptr;
-        length = 0;
-    
-    }else{
-        
-        length = rhs.length;
-        copier(rhs);
-
-    }
-    
+// assignment operator (copy/move)
+LinkedList& LinkedList::operator=(LinkedList rhs) {
+    swap(*this, rhs);
     return *this;
 }
 
+// move constructor
+LinkedList::LinkedList(LinkedList&& rhs):LinkedList() {swap(*this, rhs);}
+
+// destructor
+LinkedList::~LinkedList() {if (head != nullptr) {destruct_helper(head);}}
 
 
-// add a new node to link list
-void LinkedList::addNode(int data) {
-    
-    Node* newNode = new Node;
-    newNode->data = data;
-    newNode->next = nullptr;
-        
-    if (head == nullptr) {
-        head = newNode;
+// public member functions: - - - - - - - - - - - - -
+
+
+// return the list length
+void LinkedList::get_length() const {
+    std::cout << "length: " << length << std::endl;
+}
+
+// print the content of the linked list (front to end)
+void LinkedList::print_forward() const {
+    Node* p = head;
+    if (!p) {
+        std::cout << "the list is empty !" << std::endl;
+    } else {
+        while (p->next) {
+            std::cout << p->data << " - ";
+            p = p->next;
+        }
+        std::cout << p->data << " - ";
+        std::cout << "\n - - - - - - - - - - - - - - - - - \n";
+    }
+}
+
+// print the content of the linked list (end to front)
+void LinkedList::print_reverse() const {
+    if (!head) {
+        std::cout << "the list is empty !" << std::endl;
+    } else {
+        print_rev_helper(head);
+        std::cout << "\n - - - - - - - - - - - - - - - - - \n";
+    }
+}
+
+// check if a data exists in the linked list
+void LinkedList::print_node(double data) {
+        int position = 0;
+        Node* ans = find_helper(data, head, position);
+        if (ans) {
+            std::cout << ans->data << " is at index " << position;
+            std::cout << std::endl;
+        }
+}
+
+// update the data of an existing node
+void LinkedList::update_node(double old_val, double new_val) {
+        int position = 0;
+        Node* ans = find_helper(old_val, head, position);
+        if (ans) {ans->data = new_val;}
+}
+
+// add a new node to the beginning of the linked list
+void LinkedList::add_first(double data) {
+    Node* new_node = new Node(data);
+    if (!head) {
+        head = new_node;
         ++length;
-    }else{
-                
+    } else {
+        new_node->next = head;
+        head = new_node;
+        ++length;
+    }
+}
+
+// add a new node to the nth position of the linked list
+// if n bigger than size, adds to the end
+void LinkedList::add_middle(double data, int n) {
+    Node* new_node = new Node(data);
+    if (!head) {
+        head = new_node;
+        ++length;
+    } else if (n == 0) {
+        add_first(data);
+    } else {
+        int position = 1;
+        Node* p = head;
+        while (position != n && p->next) {
+            p = p->next;
+            ++position;
+        }
+        Node* temp = p->next;
+        p->next = new_node;
+        new_node->next = temp;
+        ++length;
+    }
+}
+
+// add a new node to the end of the linked list
+void LinkedList::add_last(double data) {
+    Node* new_node = new Node(data);
+    if (!head) {
+        head = new_node;
+        ++length;
+    } else {
         Node* curr = head;
         while (curr->next != nullptr) {
             curr = curr->next;
         }
-        curr->next = newNode;
+        curr->next = new_node;
         ++length;
     }
 }
 
-
-
 // remove an existing node from the linked list
-void LinkedList::remNode(int data) {
+void LinkedList::rem_node(double data) {
     Node* delPtr = nullptr;
     bool exist = false;
-
-    if (length == 0) {
-    
-        std::cout << "the list is empty !" << std::endl;
-        
-    }else{
-
-        if (head->data == data){
-
-            delPtr = head;
-            head = head->next;
-            delete delPtr;
+    if (!head) {
+        std::cout << "the list is empty!" << std::endl;
+    } else if (head->data == data) {
+        delPtr = head;
+        head = head->next;
+        delete delPtr;
+        --length;
+    } else {
+        Node* p1 = head;
+        Node* p2 = head->next;
+        while (p2 && p2->data != data ) {
+            p1 = p2;
+            p2 = p2->next;
+        }
+        if (!p2) {
+            std::cout << data << " is not in the list!";
+            std::cout << std::endl;
+        } else {
+            delPtr = p2;
+            p1->next = p2->next;
+            delete p2;
             --length;
-        
-        }else{
-        
-            Node* p1 = head;
-            Node* p2 = head->next;
-
-            while (p2 != nullptr) {
-            
-                if (p2->data == data) {
-                    delPtr = p2;
-                    p2 = p2->next;
-                    p1->next = p2;
-                    delete delPtr;
-                    --length;
-                    exist = true;
-                    break;
-                }
-                p1 = p2;
-                p2 = p2->next;
-                
-            }
-            if (!exist){
-                std::cout << data << " doest not exist in the list";
-                std::cout << std::endl;
-            }
-            
         }
     }
 }
 
-
-
-// print the content of the linked list
-void LinkedList::printList(){
-    Node* p = head;
-    
-    if (p == nullptr){
-        
-        std::cout << "Empty list, nothing to show \n";
-        
-    }else{
-        
-        while (p->next != nullptr) {
-            std::cout << p->data << " - ";
-            p = p->next;
+// reverse the list through iteration
+void LinkedList::reverse_list_iterate() {
+    if (head && head->next) {
+        Node* prev = nullptr;
+        Node* curr = head;
+        Node* next = head->next;
+        while (next) {
+            curr->next = prev;
+            prev = curr;
+            curr = next;
+            next = next->next;
         }
-        std::cout << p->data << std::endl;
-        std::cout << "- - - - - - - - - - - - - - - - - \n";
+        curr->next = prev;
+        head = curr;
+    }
+}
+
+// reverse the list through recursion
+void LinkedList::reverse_list_recurse() {
+    if (head && head->next) {
+        Node* prev = nullptr;
+        Node* curr = head;
+        Node* next = head->next;
+        reverse_helper(prev, curr, next);
     }
 }
 
 
+// private utility functions: - - - - - - - - - - - - -
 
-// destructor
-LinkedList::~LinkedList(){
-    if (head != nullptr) {terminator();}
+
+// used by copy constructor. performs deep copy
+void LinkedList::copy_helper(const LinkedList& obj) {
+    if (!(obj.head)) {
+        length = 0;
+        head   = nullptr;
+    } else {
+        length = obj.length;
+        Node* creator = new Node(obj.head->data);
+        head = creator;
+        Node* iterator = obj.head->next;
+        while (iterator != nullptr) {
+            creator->next = new Node;
+            creator = creator->next;
+            creator->data = iterator->data;
+            iterator = iterator->next;
+        }
+        creator->next = nullptr;
+    }
 }
 
+// used by print_node() and update_node(). look for data starting
+// at search to the end of the list
+LinkedList::Node* LinkedList::find_helper(double data, Node* search,
+                                          int& position) {
+    if (!search) {
+        std::cout << "the list is empty !" << std::endl;
+        return nullptr;
+    } else {
+        while (search->data != data && search->next) {
+            search = search->next;
+            ++position;
+        }
+        if (search->data == data) {
+            return search;
+        } else {
+            std::cout << data << " is not in the list!" << std::endl;
+            return nullptr;
+        }
+    }
+}
 
+// used by print_reverse()
+void LinkedList::print_rev_helper(Node* temp) const {
+    if (!temp) {return;}
+    print_rev_helper(temp->next);
+    std::cout << temp->data << " - ";
+}
 
-// private utility function used by destructor and copy assignment
-// destroys all the nodes in *this
-void LinkedList::terminator(){
-    Node* curr = head;
-    while (curr->next != nullptr) {
-        Node* delPtr = curr;
-        curr = curr->next;
+// used by reverse_list_recurse()
+void LinkedList::reverse_helper(Node* prev, Node* curr, Node* next) {
+    if (!next) {
+        curr->next = prev;
+        head = curr;
+        return;
+    }
+    curr->next = prev;
+    prev = curr;
+    curr = next;
+    next = next->next;
+    reverse_helper(prev, curr, next);
+}
+
+// used by destructor. destroys all the nodes from temp to the end 
+void LinkedList::destruct_helper(Node* temp) {
+    while (temp) {
+        Node* delPtr = temp;
+        temp = temp->next;
         delete delPtr;
     }
-    delete curr;
 }
-
-
-
-// private utility function used by copy constructor and copy
-// assinment operator
-// It assumes there is no node in *this and the obj list has at
-// least one node. It copies all node in obj into *this
-void LinkedList::copier(const LinkedList& obj){
-    
-    Node* p1 = nullptr;
-    Node* p2 = nullptr;
-    
-    head = new Node;
-    head->data = obj.head->data;
-    
-    p1 = head;
-    p2 = obj.head->next;
-    
-    while (p2 != nullptr) {
-        p1->next = new Node;
-        p1 = p1->next;
-        p1->data = p2->data;
-        p2 = p2->next;
-    }
-    p1->next = nullptr;
-}
-
-
-
-
-
-
 
 
